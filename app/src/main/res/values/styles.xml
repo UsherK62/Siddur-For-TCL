@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <!-- TCL Flip 2: TCL's in-window MenuBar paints itself in this theme colour. We remove that bar
+             (TclMenuBar.java); if one ever survives, it is see-through instead of a dead strip over our
+             soft-key bar. A real system navigation bar still gets Pal.bar from BaseActivity.onCreate. -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <style name="Launch" parent="@style/AppTheme">
+        <item name="android:windowBackground">@drawable/launch_bg</item>
+    </style>
+</resources>

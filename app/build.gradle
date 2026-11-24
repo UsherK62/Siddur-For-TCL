@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.pureflip.siddur'
+    compileSdk 34
+    buildToolsVersion '34.0.0'
+
+    defaultConfig {
+        applicationId 'com.pureflip.siddur'
+        minSdk 21
+        targetSdk 30
+        versionCode 2
+        versionName '0.2.0'
+        // Pure Java, no native libraries; runs on armeabi-v7a devices (TCL Flip 2).
+    }
+
+    buildTypes {
+        release {
+            // v0.1.0 was not shrunk or obfuscated (class names and R fields are intact in the dex).
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    compileOptions {
+        // Java 8 bytecode; KosherJava 3.x uses java.time, so desugar the core library for API < 26.
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+
+    buildFeatures {
+        buildConfig false
+    }
+
+    lint {
+        abortOnError true
+        // TCL Flip 2 is locked to portrait; the manifest asks for it on purpose.
+        disable 'LockedOrientationActivity', 'DiscouragedApi', 'ExpiredTargetSdkVersion', 'OldTargetApi'
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                maxHeapSize = '1g'
+                // perf only: -Pjfr=/path.jfr records an allocation profile of the test JVM
+                if (project.hasProperty('jfr')) {
+                    jvmArgs "-XX:StartFlightRecording=filename=${project.property('jfr')},settings=profile"
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.kosherjava:zmanim:3.0.0'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.13'
+}
