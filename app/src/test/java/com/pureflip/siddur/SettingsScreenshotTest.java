@@ -43,9 +43,12 @@ public class SettingsScreenshotTest {
         dir.mkdirs();
     }
 
-    private SettingsActivity open(String theme, String lang) {
+    /** Repository screenshots are in English (UI language); tefillah text and liturgical names stay Hebrew. */
+    private static final String SHOT_LANG = "en";
+
+    private SettingsActivity open(String theme, String ignoredLang) {
         prefs.theme(theme);
-        prefs.lang(lang);
+        prefs.lang(SHOT_LANG);
         // A flip phone has no touch screen: keep the window out of touch mode so rows can take focus.
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().setInTouchMode(false);
         SettingsActivity a = Robolectric.buildActivity(SettingsActivity.class, new Intent(ctx, SettingsActivity.class)).setup().get();
@@ -122,7 +125,7 @@ public class SettingsScreenshotTest {
     /** The new themes on the other screens (home, reader), for a visual check. */
     @Test
     public void otherScreens() throws Exception {
-        prefs.lang("he");
+        prefs.lang(SHOT_LANG);
         String[][] cases = {{"forest", "list"}, {"cream", "toc"}, {"ar_dark", "carousel"}, {"coffee", "split"}};
         for (String[] c : cases) {
             prefs.theme(c[0]);
