@@ -217,7 +217,7 @@ public class SettingsD1Test {
         SettingsActivity a = controller().get();
         key(a, KeyEvent.KEYCODE_DPAD_DOWN);
         key(a, KeyEvent.KEYCODE_DPAD_CENTER);
-        a.choice().pick(5);
+        a.choice().pick(java.util.Arrays.asList(SettingsActivity.themeOrder()).indexOf("teal"));
         settle();
         assertEquals("teal", prefs.theme());
     }
@@ -277,8 +277,18 @@ public class SettingsD1Test {
             assertTrue(he.add(h));
             assertTrue(en.add(e));
         }
-        assertEquals("זהב כהה", Str.get("he", "t_amber"));
-        assertEquals("בהיר", Str.get("he", "t_ar_light"));
+        assertEquals("שחור וזהב", Str.get("he", "t_amber"));
+        assertEquals("לבן", Str.get("he", "t_ar_light"));
+        // the picker lists every theme exactly once: light group, then dark group, each by colour family
+        Set<String> listed = new HashSet<>(java.util.Arrays.asList(SettingsActivity.themeOrder()));
+        assertEquals(10, SettingsActivity.themeOrder().length);
+        assertEquals(10, listed.size());
+        for (String id : Pal.LIGHT) {
+            assertFalse(id, Pal.of(id).dark);
+        }
+        for (String id : Pal.DARK) {
+            assertTrue(id, Pal.of(id).dark);
+        }
         assertEquals(0xFFF2F3F7, Pal.of("ar_light").bg);
         assertEquals(0xFF0E1014, Pal.of("ar_dark").bg);
     }

@@ -468,11 +468,25 @@ public class SettingsActivity extends BaseActivity {
         }).show(sel);
     }
 
+    /** Themes as the picker lists them: the light group, then the dark group (see {@link Pal#LIGHT}). */
+    static String[] themeOrder() {
+        String[] all = new String[Pal.LIGHT.length + Pal.DARK.length];
+        System.arraycopy(Pal.LIGHT, 0, all, 0, Pal.LIGHT.length);
+        System.arraycopy(Pal.DARK, 0, all, Pal.LIGHT.length, Pal.DARK.length);
+        return all;
+    }
+
     private void pickTheme() {
         ChoicePopup p = newChoice("theme");
+        final String[] order = themeOrder();
         int sel = 0;
-        for (int i = 0; i < Pal.ALL.length; i++) {
-            Pal t = Pal.ALL[i];
+        for (int i = 0; i < order.length; i++) {
+            if (i == 0) {
+                p.header(Str.get(this.lang, "themesLight"));
+            } else if (i == Pal.LIGHT.length) {
+                p.header(Str.get(this.lang, "themesDark"));
+            }
+            Pal t = Pal.of(order[i]);
             p.option(Str.get(this.lang, "t_" + t.id), t.swatches);
             if (t.id.equals(this.pal.id)) {
                 sel = i;
@@ -483,7 +497,7 @@ public class SettingsActivity extends BaseActivity {
             @Override
             public void pick(int i) {
                 if (i != was) {
-                    prefs.theme(Pal.ALL[i].id);
+                    prefs.theme(order[i]);
                     recreate(); // whole window re-themes; focus index survives via onSaveInstanceState
                 }
             }
@@ -565,6 +579,9 @@ public class SettingsActivity extends BaseActivity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent e) {
         if (this.choice != null && this.choice.isShowing()) {
+            if (isOk(e.getKeyCode()) && e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+                press(this.barOk);
+            }
             if (this.choice.dispatch(e)) {
                 return true;
             }

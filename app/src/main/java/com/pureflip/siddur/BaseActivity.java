@@ -188,11 +188,11 @@ abstract class BaseActivity extends Activity {
         int keyCode = keyEvent.getKeyCode();
         Popup popup = this.popup;
         if (popup != null && popup.isShowing()) {
-            if (this.popup.dispatch(keyEvent)) {
-                return true;
-            }
             if (isOk(keyCode) && keyEvent.getAction() == 0 && keyEvent.getRepeatCount() == 0) {
                 press(this.barOk);
+            }
+            if (this.popup.dispatch(keyEvent)) {
+                return true;
             }
             return super.dispatchKeyEvent(keyEvent);
         }
@@ -219,7 +219,7 @@ abstract class BaseActivity extends Activity {
         return super.dispatchKeyEvent(keyEvent);
     }
 
-    private void press(View view) {
+    protected void press(View view) {
         if (view == null) {
             return;
         }

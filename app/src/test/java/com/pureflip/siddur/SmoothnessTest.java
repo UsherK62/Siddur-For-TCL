@@ -379,7 +379,7 @@ public class SmoothnessTest {
         frames(100);
         c.recreate();
         settle();
-        assertEquals(Pal.ALL[3].id, prefs.theme());
+        assertEquals(SettingsActivity.themeOrder()[3], prefs.theme());
 
         ActivityController<ReaderActivity> rc = Robolectric.buildActivity(ReaderActivity.class,
                 new Intent(ctx, ReaderActivity.class).putExtra("doc", "bentching")).setup();

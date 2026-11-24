@@ -10,6 +10,12 @@ package com.pureflip.siddur;
 final class Pal {
     static final Pal[] ALL;
     static final Pal FOREST;
+    /**
+     * Picker order, two groups, each running neutral -> green -> blue -> purple -> warm.
+     * Light: White, Cream, Green, Sky blue, Purple, Peach. Dark: Black, Dark green, Black and gold, Brown.
+     */
+    static final String[] LIGHT = {"ar_light", "cream", "forest", "sky", "lavender", "peach"};
+    static final String[] DARK = {"ar_dark", "teal", "amber", "coffee"};
 
     final String id;
     final boolean dark;

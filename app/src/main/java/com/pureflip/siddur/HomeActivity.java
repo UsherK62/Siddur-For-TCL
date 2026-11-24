@@ -263,10 +263,11 @@ public class HomeActivity extends BaseActivity {
         linearLayout2.setBaselineAligned(true);
         linearLayout2.setPadding(Ui.dp(this, 10.0f), 0, Ui.dp(this, 10.0f), 0);
         linearLayout2.setBackground(Ui.cardBg(this, this.pal, true));
-        TextView line = Ui.line(this, "Now · " + Names.HOME_EN[this.nowTef], 15.0f, this.pal.ink, Ui.plexBold);
+        // The Now card scrolls a name that doesn't fit, focused or not ("Now · Shacharis" next to the Hebrew).
+        TextView line = Ui.line(this, "Now · " + Names.HOME_EN[this.nowTef], 15.0f, this.pal.ink, Ui.plexBold).always();
         Ui.latin(line);
         linearLayout2.addView(line, new LinearLayout.LayoutParams(0, -2, 1.0f));
-        TextView line2 = Ui.line(this, "עכשיו · " + Names.HOME_HE[this.nowTef], 16.0f, this.pal.ink, Ui.plexBold);
+        TextView line2 = Ui.line(this, "עכשיו · " + Names.HOME_HE[this.nowTef], 16.0f, this.pal.ink, Ui.plexBold).always();
         Ui.hebrew(line2);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-2, -2);
         layoutParams.leftMargin = Ui.dp(this, 6.0f);

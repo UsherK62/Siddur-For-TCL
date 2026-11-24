@@ -871,7 +871,7 @@ public class ReaderActivity extends BaseActivity {
                 }
             });
         }
-        newPopup.show(Math.max(0, indexOf));
+        newPopup.current(indexOf).show(Math.max(0, indexOf));
     }
 
     private void addBookmark() {

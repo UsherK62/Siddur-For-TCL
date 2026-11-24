@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+What's new:
+- Pressing the same key again closes a pop-up. OK on the choice that is already picked just closes it.
+- Text that is too long for its line now scrolls so you can read all of it, for example on the Now card.
+- Themes are now in two groups, Light and Dark, with clearer names: White, Cream, Green, Sky blue, Purple, Peach, Black, Dark green, Black and gold, Brown.
+- Fixed: in the Theme list, the dot for the chosen theme looked faded.
+
 ## 0.2.0
 
 What's new:

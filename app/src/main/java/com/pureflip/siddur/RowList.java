@@ -91,6 +91,7 @@ final class RowList {
         view.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view2, boolean z) {
+                view2.setSelected(z); // long one-line labels in the focused row scroll (Line)
                 if (z) {
                     RowList.this.ring.moveTo(view2, true);
                     RowList.this.reveal(view2);

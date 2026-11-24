@@ -116,7 +116,10 @@ final class Ui {
     }
 
     static TextView text(Context context, CharSequence charSequence, float f, int i, Typeface typeface) {
-        TextView textView = new TextView(context);
+        return style(new TextView(context), charSequence, f, i, typeface);
+    }
+
+    private static TextView style(TextView textView, CharSequence charSequence, float f, int i, Typeface typeface) {
         textView.setText(charSequence);
         textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, f);
         textView.setTextColor(i);
@@ -125,11 +128,9 @@ final class Ui {
         return textView;
     }
 
-    static TextView line(Context context, CharSequence charSequence, float f, int i, Typeface typeface) {
-        TextView text = text(context, charSequence, f, i, typeface);
-        text.setSingleLine(true);
-        text.setEllipsize(TextUtils.TruncateAt.END);
-        return text;
+    /** One-line label: "…" at rest, scrolls while its row is focused (see {@link Line}). */
+    static Line line(Context context, CharSequence charSequence, float f, int i, Typeface typeface) {
+        return (Line) style(new Line(context), charSequence, f, i, typeface);
     }
 
     static void hebrew(TextView textView) {

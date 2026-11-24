@@ -39,10 +39,15 @@ final class OptionRow extends View {
     private LinearGradient focusShader;
     private LinearGradient markShader;
     private int shaderW = -1;
-    private CharSequence shown = "";
+    /** The "…" version, drawn at rest and while the marquee waits at its start. */
+    private CharSequence ell = "";
     private float glow;
     private boolean on;
     private ValueAnimator anim;
+    /** Marquee: label width, room for it, current scroll offset and the looping animator. */
+    private float textW;
+    private float avail;
+    private final Marquee marquee = new Marquee(this);
 
     OptionRow(Context c, Pal p, String lang, String text, int[] dots) {
         super(c);
@@ -88,6 +93,7 @@ final class OptionRow extends View {
         super.onFocusChanged(gain, direction, previous);
         this.tp.setTypeface(gain ? this.faceFocus : this.faceRest);
         ellipsize(getWidth());
+        updateMarquee();
         if (this.anim != null) {
             this.anim.cancel();
         }
@@ -113,6 +119,34 @@ final class OptionRow extends View {
     protected void onSizeChanged(int w, int h, int ow, int oh) {
         super.onSizeChanged(w, h, ow, oh);
         ellipsize(w);
+        updateMarquee();
+    }
+
+    /** True while the label is scrolling (focused and too long to fit). */
+    boolean scrolling() {
+        return this.marquee.running();
+    }
+
+    float scrollOffset() {
+        return this.marquee.offset();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        this.marquee.stop();
+        super.onDetachedFromWindow();
+    }
+
+
+
+    /** A label that doesn't fit scrolls while focused (see {@link Marquee}). */
+    private void updateMarquee() {
+        boolean want = isFocused() && isAttachedToWindow() && this.avail > 0 && this.textW > this.avail + 0.5f;
+        if (want) {
+            this.marquee.start(this.textW - this.avail);
+        } else {
+            this.marquee.stop();
+        }
     }
 
     private float dotsWidth() {
@@ -124,7 +158,9 @@ final class OptionRow extends View {
             return;
         }
         float avail = w - 2 * this.pad - 2 * this.radioR - this.gap - (this.dots == null ? 0 : dotsWidth() + this.gap);
-        this.shown = TextUtils.ellipsize(this.text, this.tp, Math.max(0, avail), TextUtils.TruncateAt.END);
+        this.avail = Math.max(0, avail);
+        this.textW = this.tp.measureText(this.text);
+        this.ell = TextUtils.ellipsize(this.text, this.tp, this.avail, TextUtils.TruncateAt.END);
     }
 
     @Override
@@ -154,6 +190,7 @@ final class OptionRow extends View {
             c.save();
             c.translate(rx - this.radioR, 0);
             this.mark.setStyle(Paint.Style.FILL);
+            this.mark.setColor(0xFF000000); // opaque: the swatch edges below leave this paint at 25 % alpha
             this.mark.setShader(this.markShader);
             c.drawCircle(this.radioR, cy, this.radioR, this.mark);
             c.restore();
@@ -170,12 +207,27 @@ final class OptionRow extends View {
         }
         // label next to the mark
         float base = cy - (this.tp.descent() + this.tp.ascent()) / 2.0f;
+        float x0 = this.rtl ? rx - this.radioR - this.gap : rx + this.radioR + this.gap;
+        float scrollX = this.marquee.offset();
+        boolean clip = this.marquee.running() && scrollX > 0.0f;
+        CharSequence draw = clip ? this.text : this.ell;
+        if (clip) {
+            c.save();
+            if (this.rtl) {
+                c.clipRect(x0 - this.avail, 0, x0, h);
+            } else {
+                c.clipRect(x0, 0, x0 + this.avail, h);
+            }
+        }
         if (this.rtl) {
             this.tp.setTextAlign(Paint.Align.RIGHT);
-            c.drawText(this.shown, 0, this.shown.length(), rx - this.radioR - this.gap, base, this.tp);
+            c.drawText(draw, 0, draw.length(), x0 + scrollX, base, this.tp);
         } else {
             this.tp.setTextAlign(Paint.Align.LEFT);
-            c.drawText(this.shown, 0, this.shown.length(), rx + this.radioR + this.gap, base, this.tp);
+            c.drawText(draw, 0, draw.length(), x0 - scrollX, base, this.tp);
+        }
+        if (clip) {
+            c.restore();
         }
         // colour dots on the far side
         if (this.dots != null) {

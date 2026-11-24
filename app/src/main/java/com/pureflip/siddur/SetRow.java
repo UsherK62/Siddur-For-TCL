@@ -128,6 +128,7 @@ final class SetRow extends LinearLayout {
     /** Opens (focus) or closes the row; animated over 120 ms unless {@code animate} is false. */
     void setOpen(boolean o, boolean animate) {
         this.open = o;
+        setSelected(o); // a label or value that doesn't fit scrolls while the row is focused (Line)
         this.label.setTypeface(Ui.face(this.lang, o ? 700 : 600));
         this.label.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, o ? this.labelOpen : this.labelRest);
         if (this.tint != null) {

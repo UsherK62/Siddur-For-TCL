@@ -16,6 +16,8 @@ import java.util.List;
  * Settings picker, Auto Reply style: a centred rounded card on a scrim with one radio row per option.
  * Fades / scales in over 150 ms and out over 120 ms. The soft-key bar stays visible below the scrim.
  * Up / Down move (wrapping), OK picks, Back / Menu close, 1-9 pick directly.
+ * OK on the option that is already chosen just closes, so the key that opened the picker closes it again.
+ * Options can be grouped under small headers that never take focus ({@link #header}).
  */
 final class ChoicePopup {
     interface OnPick {
@@ -26,6 +28,8 @@ final class ChoicePopup {
     static final long OUT_MS = 120L;
     private static final float ROW_DP = 27.0f;
     private static final float GAP_DP = 3.0f;
+    static final float HEAD_DP = 16.0f;
+    private static final float HEAD_GAP_DP = 6.0f;
 
     private final Context c;
     private final FrameLayout host;
@@ -36,6 +40,10 @@ final class ChoicePopup {
     private final SmoothScroll scroll;
     private final LinearLayout column;
     final List<OptionRow> rows = new ArrayList<>();
+    /** Group header shown above row i, or null. */
+    final List<TextView> heads = new ArrayList<>();
+    private TextView pendingHead;
+    private boolean okDown;
     private final int barPx;
     private OnPick onPick;
     private Runnable onClose;
@@ -108,16 +116,40 @@ final class ChoicePopup {
         return this;
     }
 
+    /** A small group header (e.g. "Light" / "Dark") above the next options. Never takes focus. */
+    ChoicePopup header(String text) {
+        TextView h = Ui.line(this.c, text, 11.0f, this.p.head, Ui.face(this.lang, 700));
+        if (Str.rtl(this.lang)) {
+            Ui.hebrew(h);
+        } else {
+            Ui.latin(h);
+        }
+        h.setGravity((Str.rtl(this.lang) ? Gravity.RIGHT : Gravity.LEFT) | Gravity.BOTTOM);
+        int side = Ui.dp(this.c, 9.0f);
+        h.setPadding(side, 0, side, Ui.dp(this.c, 2.0f));
+        h.setFocusable(false);
+        h.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this.c, HEAD_DP));
+        if (this.column.getChildCount() > 0) {
+            lp.topMargin = Ui.dp(this.c, HEAD_GAP_DP);
+        }
+        this.column.addView(h, lp);
+        this.pendingHead = h;
+        return this;
+    }
+
     /** Adds an option; {@code dots} (theme colours) go on the far side, may be null. */
     ChoicePopup option(String text, int[] dots) {
         final int index = this.rows.size();
         OptionRow row = new OptionRow(this.c, this.p, this.lang, text, dots);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this.c, ROW_DP));
-        if (index > 0) {
+        if (index > 0 && this.pendingHead == null) {
             lp.topMargin = Ui.dp(this.c, GAP_DP);
         }
         this.column.addView(row, lp);
         this.rows.add(row);
+        this.heads.add(this.pendingHead);
+        this.pendingHead = null;
         row.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean has) {
@@ -160,10 +192,14 @@ final class ChoicePopup {
     }
 
     void pick(final int index) {
-        if (this.picking || !this.showing) {
+        if (this.picking || !this.showing || index < 0 || index >= this.rows.size()) {
             return;
         }
         this.picking = true;
+        if (index == this.checked) {
+            dismiss(null); // already chosen: OK just closes, nothing changes
+            return;
+        }
         setChecked(index);
         this.card.postDelayed(new Runnable() {
             @Override
@@ -192,8 +228,11 @@ final class ChoicePopup {
         if (h == 0) {
             return;
         }
-        int top = row.getTop();
-        int bottom = top + row.getHeight();
+        int at = this.rows.indexOf(row);
+        // The first option of a group brings its header along; the very first option scrolls to the top.
+        View head = at >= 0 ? this.heads.get(at) : null;
+        int top = at == 0 ? Ui.dp(this.c, 4.0f) : head != null ? head.getTop() : row.getTop();
+        int bottom = row.getTop() + row.getHeight();
         int m = Ui.dp(this.c, 4.0f);
         int cur = this.scroll.endScrollY();
         int to = cur;
@@ -214,12 +253,18 @@ final class ChoicePopup {
             return;
         }
         this.showing = true;
+        this.picking = false;
+        this.okDown = false;
         setChecked(checkedIndex);
         // Cap the list so the card fits between the title strip and the soft-key bar.
         int hostH = this.host.getHeight() > 0 ? this.host.getHeight() : this.c.getResources().getDisplayMetrics().heightPixels;
         int avail = hostH - this.barPx - Ui.dp(this.c, 20.0f + 20.0f + 22.0f + 8.0f);
         int n = this.rows.size();
-        int want = n * Ui.dp(this.c, ROW_DP) + Math.max(0, n - 1) * Ui.dp(this.c, GAP_DP);
+        int want = 0;
+        for (int i = 0; i < this.column.getChildCount(); i++) {
+            LinearLayout.LayoutParams clp = (LinearLayout.LayoutParams) this.column.getChildAt(i).getLayoutParams();
+            want += clp.height + clp.topMargin + clp.bottomMargin;
+        }
         this.scroll.getLayoutParams().height = Math.min(want, Math.max(Ui.dp(this.c, ROW_DP) * 3, avail));
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         lp.bottomMargin = this.barPx;
@@ -275,6 +320,20 @@ final class ChoicePopup {
             return true;
         }
         if (code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            return true;
+        }
+        if (BaseActivity.isOk(code)) {
+            // OK picks the focused option on release; on the chosen one (where the picker opens) it just closes.
+            // Only a press that started while the picker was open counts, and nothing focused means "close".
+            if (e.getAction() == KeyEvent.ACTION_DOWN) {
+                if (e.getRepeatCount() == 0) {
+                    this.okDown = true;
+                }
+            } else if (e.getAction() == KeyEvent.ACTION_UP && this.okDown) {
+                this.okDown = false;
+                int i = this.rows.indexOf(this.card.findFocus());
+                pick(i >= 0 ? i : this.checked);
+            }
             return true;
         }
         if (code >= KeyEvent.KEYCODE_1 && code <= KeyEvent.KEYCODE_9) {

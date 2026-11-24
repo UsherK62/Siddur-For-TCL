@@ -20,6 +20,9 @@ final class Popup {
     private Runnable onClose;
     private int barPx;
     private View before;
+    /** Row that is already in effect (e.g. today's text size): OK on it just closes. -1 if none. */
+    private int current = -1;
+    private boolean okDown;
 
     interface OnPick {
         void pick(int index);
@@ -82,6 +85,7 @@ final class Popup {
 
     /** Adds a row; {@code endPad} is extra right padding in dp (also dims the Hebrew label). */
     Popup item(String str, String str2, float f, int endPad, final Runnable r) {
+        final int index = this.list.rows.size();
         LinearLayout linearLayout = new LinearLayout(this.c);
         linearLayout.setOrientation(LinearLayout.HORIZONTAL);
         linearLayout.setGravity(Gravity.CENTER_VERTICAL);
@@ -104,7 +108,7 @@ final class Popup {
                     return; // a second OK during the 120 ms fade-out must not run the action twice
                 }
                 dismiss();
-                if (r != null) {
+                if (r != null && index != current) {
                     r.run();
                 }
             }
@@ -123,6 +127,12 @@ final class Popup {
         return this;
     }
 
+    /** Marks row {@code i} as the one already in effect: OK there closes without running it again. */
+    Popup current(int i) {
+        this.current = i;
+        return this;
+    }
+
     Popup onClose(Runnable r) {
         this.onClose = r;
         return this;
@@ -133,6 +143,7 @@ final class Popup {
             return;
         }
         this.showing = true;
+        this.okDown = false;
         this.before = this.host.findFocus();
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -1);
         lp.bottomMargin = this.barPx;
@@ -188,6 +199,24 @@ final class Popup {
             return true;
         }
         if (keyCode == 21 || keyCode == 22) {
+            return true;
+        }
+        if (BaseActivity.isOk(keyCode)) {
+            // OK runs the focused row on release (its own click closes the popup). It never runs a row it
+            // didn't land on: with nothing focused it just closes. Only a press begun while open counts.
+            if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                if (keyEvent.getRepeatCount() == 0) {
+                    this.okDown = true;
+                }
+            } else if (keyEvent.getAction() == KeyEvent.ACTION_UP && this.okDown) {
+                this.okDown = false;
+                int i = this.list.rows.indexOf(this.card.findFocus());
+                if (i >= 0) {
+                    this.list.rows.get(i).performClick();
+                } else {
+                    dismiss();
+                }
+            }
             return true;
         }
         if (keyCode >= 8 && keyCode <= 16) {
